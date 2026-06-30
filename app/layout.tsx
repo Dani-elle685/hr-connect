@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';   // ← This is the correct path
 
 export const metadata: Metadata = {
-  title: 'HR Connect',
-  description: 'Attendance System',
+  title: "HR Portal",
+  description: "Enterprise HR Admin Dashboard",
 };
 
 export default function RootLayout({
