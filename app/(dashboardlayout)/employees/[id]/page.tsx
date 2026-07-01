@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MapPin, Mail, Calendar, Pencil, Download, AlertTriangle, Star, UserX } from "lucide-react";
 import { employees as seedEmployees } from "@/lib/mock-data";
-import { getAllEmployees } from "@/lib/storage";
+import { getAllEmployees, updateEmployee } from "@/lib/storage";
 import StatusBadge from "@/components/StatusBadge";
 
 const tabs = ["Personal Information", "Job Details", "Documents", "Employment History"];
@@ -13,8 +13,10 @@ const tabs = ["Personal Information", "Job Details", "Documents", "Employment Hi
 export default function EmployeeProfilePage() {
   const params = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState(tabs[0]);
+  const router = useRouter();
 
-  const allEmployees = typeof window !== "undefined" ? getAllEmployees(seedEmployees) : seedEmployees;
+  const allEmployees =
+    typeof window !== "undefined" ? getAllEmployees(seedEmployees) : seedEmployees;
   const employee = allEmployees.find((e) => e.id === params.id);
 
   if (!employee) {
@@ -30,6 +32,24 @@ export default function EmployeeProfilePage() {
       </div>
     );
   }
+
+  function handleDeactivate() {
+    const confirmed = window.confirm(
+      `Are you sure you want to deactivate ${employee!.name}? They will lose access to HR Connect and payroll processing will stop for this user.`
+    );
+    if (!confirmed) return;
+    updateEmployee(employee!.id, { status: "Suspended" });
+    router.refresh();
+  }
+
+  function handleActivate() {
+  const confirmed = window.confirm(
+    `Activate ${employee!.name}'s account? They will regain access to HR Connect.`
+  );
+  if (!confirmed) return;
+  updateEmployee(employee!.id, { status: "Active" });
+  router.refresh();
+}
 
   const initials = employee.avatarInitials ?? employee.name.split(" ").map((n) => n[0]).join("");
 
@@ -258,19 +278,35 @@ export default function EmployeeProfilePage() {
               </div>
             </div>
           )}
-
+          
           <div className="rounded-xl bg-red-50 p-5">
             <h3 className="mb-2 flex items-center gap-2 text-base font-bold text-red-700">
               <AlertTriangle className="h-5 w-5" />
               Administrative Actions
             </h3>
             <p className="text-sm text-red-600">
-              Once an account is deactivated, the employee will no longer have access to HR Connect and payroll processing for this user will stop.
-            </p>
-            <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-semibold text-red-700">
-              <UserX className="h-4 w-4" />
-              Deactivate Account
-            </button>
+              {employee.status === "Suspended"
+              ? "This account is currently deactivated. Activate it to restore the employee's access to HR Connect and payroll processing."
+              : "Once an account is deactivated, the employee will no longer have access to HR Connect and payroll processing for this user will stop."}
+              </p>
+              {employee.status === "Suspended" ? (
+                <button
+                onClick={handleActivate}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-300 bg-white px-4 py-2.5 text-sm font-semibold text-green-700"
+                >
+                  <UserX className="h-4 w-4" />
+                  Activate Account
+                </button>
+                ) : (
+                <button
+                onClick={handleDeactivate}
+                disabled={employee.status === "Resigned"}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <UserX className="h-4 w-4" />
+                  {employee.status === "Resigned" ? "Account Resigned" : "Deactivate Account"}
+                </button>
+              )}
           </div>
         </div>
       </div>
